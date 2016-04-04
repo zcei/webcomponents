@@ -1192,8 +1192,8 @@ The <dfn id="dom-htmlelement-constructor"><code>HTMLElement</code> constructor</
 
 <pre class='idl'>
 partial interface Document {
-    Element createElement(DOMString localName, optional ElementCreationOptions options);
-    Element createElementNS(DOMString? namespace, DOMString qualifiedName, optional ElementCreationOptions options);
+    [CustomElementReactions] Element createElement(DOMString localName, optional ElementCreationOptions options);
+    [CustomElementReactions] Element createElementNS(DOMString? namespace, DOMString qualifiedName, optional ElementCreationOptions options);
 };
 
 dictionary ElementCreationOptions {
@@ -1242,6 +1242,140 @@ The <dfn id="dom-document-createelementns"><code>createElementNS(namespace, qual
 </ol>
 
 </div>
+
+</section>
+
+<section>
+<h3>Web IDL+: <dfn id="CustomElementReactions"><code>[CustomElementReactions]</code></dfn></h3>
+
+<p>If the <a><code>[CustomElementReactions]</code></a> <a href="https://heycam.github.io/webidl/#dfn-extended-attribute">extended attribute</a> appears on an <a href="https://heycam.github.io/webidl/#dfn-attribute">attribute</a> or <a href="https://heycam.github.io/webidl/#dfn-operation">operation</a>, it indicates that the algorithm implementing the attribute or operation is to be supplemented with additional steps in order to appropriately track and call <a>custom element reactions</a>.</p>
+
+<p>The <a><code>[CustomElementReactions]</code></a> extended attribute <span class="rfc2119">MUST</span> <a href="https://heycam.github.io/webidl/#dfn-xattr-no-arguments">take no arguments</a>.</p>
+
+<p>The <a><code>[CustomElementReactions]</code></a> extended attribute <span class="rfc2119">MUST NOT</span> appear on anything other than an <a href="https://heycam.github.io/webidl/#dfn-attribute">attribute</a> or <a href="https://heycam.github.io/webidl/#dfn-operation">operation</a>.</p>
+
+<p>Operations and attributes annotated with the <a><code>[CustomElementReactions]</code></a> extended attribute must run the following steps surrounding the main algorithm specified for the operation, or for the attribute's getter and (if applicable) setter:</p>
+
+<ul>
+    <li><strong>Before executing the algorithm's steps</strong>: push a new <a>element queue</a> to the <a>custom element reactions stack</a>.</li>
+    <li><strong>After executing the algorithm's steps</strong>: pop the <a>element queue</a> from the <a>custom element reactions stack</a> and <a>invoke custom element reactions</a> in that queue.</li>
+</ul>
+
+<div class="note">
+    <p>The intent behind this attribute is somewhat subtle. One way of accomplishing its goals would be to say that every operation and attribute on the platform should have these steps inserted, and to allow implementers to optimize away unnecessary cases (where no DOM mutation is possible that could cause <a>custom element reactions</a> to occur).</p>
+
+    <p>However, in practice this imprecision could lead to non-interoperable implementations of <a>custom element reactions</a>, as some implementations might forget to invoke these steps on certain methods. Instead, we settled on the approach of explicitly annotating all relevant operations and attributes, as a way of ensuring interoperable behavior and helping implementations easily pinpoint all cases where these steps are necessary.</p>
+</div>
+
+<section>
+<h4>DOM+: <a><code>[CustomElementReactions]</code></a> insertions</h4>
+
+<p class="monkeypatch">The following operations and attributes should be decorated with the <a><code>[CustomElementReactions]</code></a> extended attribute:</p>
+
+<dl>
+    <dt><code>Node</code></dt>
+    <dd>
+        <ul class="brief">
+            <li><code>nodeValue</code></li>
+            <li><code>textContent</code></li>
+            <li><code>normalize()</code></li>
+            <li><code>cloneNode()</code></li>
+            <li><code>insertBefore()</code></li>
+            <li><code>appendChild()</code></li>
+            <li><code>replaceChild()</code></li>
+            <li><code>removeChild()</code></li>
+        </ul>
+    </dd>
+
+    <dt><code>Element</code></dt>
+    <dd>
+        <ul class="brief">
+            <li><code>setAttribute()</code></li>
+            <li><code>setAttributeNS()</code></li>
+            <li><code>removeAttribute()</code></li>
+            <li><code>removeAttributeNS()</code></li>
+            <li><code>setAttributeNode()</code></li>
+            <li><code>setAttributeNodeNS()</code></li>
+            <li><code>removeAttributeNode()</code></li>
+            <li><code>insertAdjacentElement()</code></li>
+            <li><code>innerHTML</code></li>
+            <li><code>outerHTML</code></li>
+            <li><code>insertAdjacentHTML()</code></li>
+        </ul>
+    </dd>
+
+    <dt><code>Attr</code></dt>
+    <dd>
+        <ul class="brief">
+            <li><code>value</code></li>
+            <li><code>nodeValue</code></li>
+            <li><code>textContent</code></li>
+        </ul>
+    </dd>
+
+    <dt><code>DOMTokenList</code></dt>
+    <dd>
+        <ul class="brief">
+            <li><code>add()</code></li>
+            <li><code>remove()</code></li>
+            <li><code>toggle()</code></li>
+            <li><code>replace()</code></li>
+            <li><code>value</code></li>
+        </ul>
+    </dd>
+
+    <dt><code>Document</code></dt>
+    <dd>
+        <ul class="brief">
+            <li><code>createElement()</code></li>
+            <li><code>createElementNS()</code></li>
+            <li><code>importNode()</code></li>
+            <li><code>adoptNode()</code></li>
+        </ul>
+    </dd>
+
+    <dt><code>Range</code></dt>
+    <dd>
+        <ul class="brief">
+            <li><code>deleteContents()</code></li>
+            <li><code>extractContents()</code></li>
+            <li><code>cloneContents()</code></li>
+            <li><code>insertNode()</code></li>
+            <li><code>surroundContents()</code></li>
+        </ul>
+    </dd>
+</dl>
+</section>
+
+<section>
+<h4>DOM P&amp;S+: <a><code>[CustomElementReactions]</code></a> insertions</h4>
+
+<p class="monkeypatch">The following operations and attributes should be decorated with the <a><code>[CustomElementReactions]</code></a> extended attribute in <a href="https://w3c.github.io/DOM-Parsing/#extensions-to-the-range-interface">DOM Parsing &amp; Serialization</a>:</p>
+
+<dl>
+    <dt><code>Range</code></dt>
+    <dd>
+        <ul class="brief">
+            <li><code>createContextualFragment()</code></li>
+        </ul>
+    </dd>
+</dl>
+</section>
+
+<section>
+<h4>SVG+: <a><code>[CustomElementReactions]</code></a> insertions</h4>
+
+<p class="monkeypatch">The following operations and attributes should be decorated with the <a><code>[CustomElementReactions]</code></a> extended attribute in some maintained SVG specification:</p>
+
+<dl>
+    <dt><code>SVGElement</code></dt>
+    <dd>
+        <ul class="brief">
+            <li><code>tabIndex</code></li>
+        </ul>
+    </dd>
+</dl>
+</section>
 
 </section>
 
